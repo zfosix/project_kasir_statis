@@ -12,37 +12,47 @@ class CashierPage extends StatefulWidget {
 class _CashierPageState extends State<CashierPage> {
   final TextEditingController searchController = TextEditingController();
 
-  // Daftar produk
+  // Daftar produk dengan tambahan stok
   final List<Map<String, dynamic>> products = [
     {
       'name': 'Makaroni',
       'category': 'Makanan',
       'price': 'Rp. 20.000',
       'image': 'assets/images/makanan.jpeg',
+      'quantity': 0,
+      'stock': 20,
     },
     {
       'name': 'MilkShake',
       'category': 'Minuman',
       'price': 'Rp. 25.000',
       'image': 'assets/images/minuman.jpeg',
+      'quantity': 0,
+      'stock': 15,
     },
     {
       'name': 'Ikan Bakar',
       'category': 'Makanan',
       'price': 'Rp. 220.000',
       'image': 'assets/images/ikanbakar.jpeg',
+      'quantity': 0,
+      'stock': 10,
     },
     {
       'name': 'Seblak',
       'category': 'Makanan',
       'price': 'Rp. 45.000',
       'image': 'assets/images/seblak.jpeg',
+      'quantity': 0,
+      'stock': 25,
     },
     {
       'name': 'Sop Buah',
       'category': 'Makanan',
       'price': 'Rp. 15.000',
       'image': 'assets/images/sopbuah.jpeg',
+      'quantity': 0,
+      'stock': 30,
     },
   ];
 
@@ -74,47 +84,68 @@ class _CashierPageState extends State<CashierPage> {
 
   void _updateTotalPrice() {
     int newTotalPrice = 0;
+    selectedProducts = products.where((product) => product['quantity'] > 0).toList();
+
     for (var product in selectedProducts) {
       final priceStr =
           product['price']?.replaceAll('Rp. ', '').replaceAll('.', '') ?? '0';
       int productPrice = int.tryParse(priceStr) ?? 0;
-      // Konversi hasil perkalian ke int
-      newTotalPrice += (productPrice * (product['quantity'] ?? 1)).toInt();
+      newTotalPrice += (productPrice * product['quantity']).toInt();
     }
+
     setState(() {
       totalPrice = newTotalPrice;
     });
   }
 
-  void _toggleSelection(Map<String, dynamic> product) {
+  void _updateQuantity(Map<String, dynamic> product, bool isIncrement) {
     setState(() {
-      final existingProduct = selectedProducts
-          .firstWhere((p) => p['name'] == product['name'], orElse: () => {});
-      if (existingProduct.isNotEmpty) {
-        selectedProducts.remove(existingProduct);
+      if (isIncrement) {
+        if (product['stock'] > 0) {
+          product['quantity'] += 1;
+          product['stock'] -= 1;
+        } else {
+          _showStockEmptyAlert(product); // Tampilkan alert jika stok habis
+        }
       } else {
-        selectedProducts.add({...product, 'quantity': 1});
+        if (product['quantity'] > 0) {
+          product['quantity'] -= 1;
+          product['stock'] += 1;
+        }
       }
       _updateTotalPrice();
     });
   }
 
-  void _updateQuantity(Map<String, dynamic> product, bool isIncrement) {
+  void _resetProductQuantities() {
     setState(() {
-      final existingProduct = selectedProducts
-          .firstWhere((p) => p['name'] == product['name'], orElse: () => {});
-
-      if (existingProduct.isNotEmpty) {
-        if (isIncrement) {
-          existingProduct['quantity'] += 1;
-        } else {
-          existingProduct['quantity'] = (existingProduct['quantity'] > 1)
-              ? existingProduct['quantity'] - 1
-              : 1;
+      for (var product in products) {
+        if (product['quantity'] > 0) {
+          product['quantity'] = 0; // Reset kuantitas menjadi 0
         }
       }
-      _updateTotalPrice();
+      totalPrice = 0; // Reset total harga
     });
+  }
+
+  void _showStockEmptyAlert(Map<String, dynamic> product) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Stok Habis'),
+          content: Text('Maaf, stok ${product['name']} sudah habis.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   String formatPrice(int price) {
@@ -153,19 +184,14 @@ class _CashierPageState extends State<CashierPage> {
                 ),
                 const SizedBox(height: 20),
 
-                // Menampilkan daftar produk yang difilter
                 Expanded(
                   child: ListView.separated(
                     separatorBuilder: (context, index) {
-                      return const SizedBox(
-                        height: 8,
-                      );
+                      return const SizedBox(height: 8);
                     },
                     itemCount: filteredProducts.length,
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
-                      final selected = selectedProducts
-                          .any((p) => p['name'] == product['name']);
                       return Card(
                         elevation: 2,
                         margin: const EdgeInsets.symmetric(vertical: 2),
@@ -177,48 +203,46 @@ class _CashierPageState extends State<CashierPage> {
                             children: [
                               Text(product['category'] ?? ''),
                               Text(product['price'] ?? ''),
+                              Text('Stok: ${product['stock']}'),
                             ],
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (selected)
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.remove_circle_outline,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () =>
-                                      _updateQuantity(product, false),
-                                ),
-                              if (selected)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    "${selectedProducts.firstWhere((p) => p['name'] == product['name'])['quantity']}",
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
                               IconButton(
-                                icon: Icon(
-                                  selected ? Icons.add_circle : Icons.add_circle_outline,
+                                icon: const Icon(
+                                  Icons.remove_circle_outline,
+                                  color: Colors.red,
+                                ),
+                                onPressed: product['quantity'] > 0
+                                    ? () => _updateQuantity(product, false)
+                                    : null,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  "${product['quantity']}",
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.add_circle_outline,
                                   color: Colors.green,
                                 ),
-                                onPressed: () {
-                                  if (selected) {
-                                    _updateQuantity(product, true);
-                                  } else {
-                                    _toggleSelection(product);
-                                  }
-                                },
+                                onPressed: product['stock'] > 0
+                                    ? () => _updateQuantity(product, true)
+                                    : () {
+                                        _showStockEmptyAlert(product); // Tampilkan alert ketika stok 0
+                                      },
                               ),
                             ],
                           ),
@@ -231,7 +255,6 @@ class _CashierPageState extends State<CashierPage> {
             ),
           ),
 
-          // Tombol Checkout
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -260,23 +283,28 @@ class _CashierPageState extends State<CashierPage> {
                         Icons.shopping_cart_checkout_outlined,
                         color: Colors.white,
                       ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CheckoutPage(
-                              totalPrice: totalPrice,
-                              selectedProducts: selectedProducts,
-                            ),
-                          ),
-                        );
-                      },
+                      onPressed: totalPrice > 0
+                          ? () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CheckoutPage(
+                                    totalPrice: totalPrice,
+                                    selectedProducts: selectedProducts,
+                                  ),
+                                ),
+                              );
+                              if (result == true) {
+                                _resetProductQuantities();
+                              }
+                            }
+                          : null,
                     ),
                   ],
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

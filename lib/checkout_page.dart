@@ -5,15 +5,11 @@ class CheckoutPage extends StatelessWidget {
   final int totalPrice;
   final List<Map<String, dynamic>> selectedProducts;
 
-  const CheckoutPage({
-    super.key, 
-    required this.totalPrice, 
-    required this.selectedProducts
-  });
+  CheckoutPage({super.key, required this.totalPrice, required this.selectedProducts});
 
   String formatPrice(int price) {
     final formatter = NumberFormat("#,###", "id_ID");
-    return "Rp ${formatter.format(price)}";
+    return "Total Harga : Rp ${formatter.format(price)}";
   }
 
   @override
@@ -21,171 +17,121 @@ class CheckoutPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Checkout'),
+        backgroundColor: Colors.grey[800], // Mengganti warna app bar menjadi abu-abu
+        elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Daftar Produk yang Dibeli",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+            // Total price section with custom style
+            Text(
+              formatPrice(totalPrice),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,  // Mengubah warna harga menjadi hitam
               ),
             ),
             const SizedBox(height: 20),
-            selectedProducts.isNotEmpty
-                ? ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: selectedProducts.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final product = selectedProducts[index];
-                      return Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.symmetric(vertical: 2),
-                        child: ListTile(
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset(
-                              product['image'] ?? '',
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          title: Text(
-                            product['name'] ?? '',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(product['category'] ?? ''),
-                              Text(
-                                '${product['price']} x ${product['quantity']}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
+
+            // List of selected products in cards
+            Expanded(
+              child: ListView.builder(
+                itemCount: selectedProducts.length,
+                itemBuilder: (context, index) {
+                  final product = selectedProducts[index];
+                  return Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    color: Colors.grey[200],  // Card menggunakan warna abu-abu muda
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: Icon(
+                        Icons.shopping_cart,
+                        color: Colors.grey[700],  // Ikon dengan warna abu-abu gelap
+                        size: 30,
+                      ),
+                      title: Text(
+                        product['name'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,  // Judul produk tetap hitam
                         ),
-                      );
-                    },
-                  )
-                : const Center(
-                    child: Text("Tidak ada produk yang dipilih."),
-                  ),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Total Pembayaran",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      ),
+                      subtitle: Text('Qty: ${product['quantity']}'),
+                      trailing: Text(
+                        'Rp ${product['quantity'] * int.parse(product['price'].replaceAll('Rp. ', '').replaceAll('.', ''))}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,  // Harga produk tetap hitam
+                        ),
+                      ),
                     ),
-                  ),
-                  Text(
-                    formatPrice(totalPrice),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
+
+            const SizedBox(height: 20),
+
+            // Payment button with attractive style in grey theme
+            Center(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
                 onPressed: () {
                   showDialog(
                     context: context,
-                    barrierDismissible: false,
                     builder: (BuildContext context) {
                       return AlertDialog(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 80,
-                            ),
-                            const SizedBox(height: 20),
-                            const Text(
-                              'Pembayaran Berhasil!',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Total Pembayaran: ${formatPrice(totalPrice)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                minimumSize: const Size(double.infinity, 45),
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text(
-                                'OK',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
+                        title: const Text(
+                          'Pembayaran Berhasil',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        content: const Text(
+                          'Terima kasih atas pembelian Anda!',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context); // Tutup dialog
+                              Navigator.pop(context, true); // Kembali ke halaman CashierPage
+                            },
+                            child: const Text(
+                              'OK',
+                              style: TextStyle(color: Colors.grey),  // Warna teks tombol OK
+                            ),
+                          ),
+                        ],
                       );
                     },
                   );
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[700],  // Tombol dengan warna abu-abu gelap
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: const Text(
-                  'Bayar',
+                  'Lakukan Pembayaran',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,  // Warna teks putih
                   ),
                 ),
               ),
