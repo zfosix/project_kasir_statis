@@ -255,7 +255,7 @@ class _CashierPageState extends State<CashierPage> {
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+                        borderRadius: BorderRadius.circular(8.0),             
                       ),
                     ),
                   ),
